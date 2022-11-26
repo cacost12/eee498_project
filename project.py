@@ -211,6 +211,9 @@ for i in range( 10 ):
 X_int_note = dict( (num, midi_note) for num, midi_note in enumerate( note_int_X ) ) 
 midi_note_preds = [ X_int_note[num] for num in yp ]
 
+# Export to a midi file
+export_midi( midi_note_preds )
+
 ###############################################################
 # END OF FILE                                                 # 
 ###############################################################
