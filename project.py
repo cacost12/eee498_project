@@ -155,19 +155,37 @@ X_train, X_test, y_train, y_test = train_test_split( X_seq,
 
 
 ###############################################################
-# Machine Learning Model LTSM                                 #
+# Machine Learning Model: WaveNet                             #
 ###############################################################
 
 # Initialize the model 
 K.clear_session()
 ML_model = Sequential()
-ML_model.add( LSTM( 128, return_sequences = True ) )
-ML_model.add( LSTM(128) )
-ML_model.add( Dense(256))
-ML_model.add( Activation('relu') )
-ML_model.add( Dense( len(note_int_y ) ) )
-ML_model.add(Activation('softmax'))
-ML_model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+
+#embedding layer
+ML_model.add(Embedding(len(Note_int_X), 100, input_length=32,trainable=True)) 
+
+model.add(Conv1D(64,3, padding='causal',activation='relu'))
+model.add(Dropout(0.2))
+model.add(MaxPool1D(2))
+    
+model.add(Conv1D(128,3,activation='relu',dilation_rate=2,padding='causal'))
+model.add(Dropout(0.2))
+model.add(MaxPool1D(2))
+
+model.add(Conv1D(256,3,activation='relu',dilation_rate=4,padding='causal'))
+model.add(Dropout(0.2))
+model.add(MaxPool1D(2))
+          
+#model.add(Conv1D(256,5,activation='relu'))    
+model.add(GlobalMaxPool1D())
+    
+model.add(Dense(256, activation='relu'))
+model.add(Dense(len(note_int_y), activation='softmax'))
+    
+model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+
+model.summary()
 
 # Best model callback
 model_callback = ModelCheckpoint( 'best_model.h5',
@@ -177,8 +195,8 @@ model_callback = ModelCheckpoint( 'best_model.h5',
                                   verbose = 1 )
 
 # Train the model	
-training_history = ML_model.fit( np.array( [X_train] ), 
-                                 np.array( [y_train] ), 
+training_history = ML_model.fit( np.array( X_train ), 
+                                 np.array( y_train ), 
                               batch_size = batch_size, 
                               epochs = epochs,
                               validation_data = ( np.array( X_test ), 
