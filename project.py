@@ -48,6 +48,7 @@ midi_files = [
               midi_path + "vivarythm.mid"       
              ]
 midi_notes_list = []
+output_filename = "new_music"
 
 # Model hyperparameters
 note_freq_threshold  = 10  # only use notes occuring more than 10 times
@@ -176,12 +177,12 @@ model_callback = ModelCheckpoint( 'best_model.h5',
                                   verbose = 1 )
 
 # Train the model	
-training_history = ML_model.fit( np.array( X_train ), 
-                              np.array( y_train ), 
+training_history = ML_model.fit( np.array( [X_train] ), 
+                                 np.array( [y_train] ), 
                               batch_size = batch_size, 
                               epochs = epochs,
-                              validation_dat = ( np.array( X_test, 
-                                                           y_test ) ),
+                              validation_data = ( np.array( X_test ), 
+                                                 np.array( y_test ) ),
                               verbose = 1, 
                               callbacks = [model_callback] )
 
@@ -212,7 +213,7 @@ X_int_note = dict( (num, midi_note) for num, midi_note in enumerate( note_int_X 
 midi_note_preds = [ X_int_note[num] for num in yp ]
 
 # Export to a midi file
-midi_util.export_midi( midi_note_preds )
+midi_util.export_midi( midi_note_preds, output_filename )
 
 ###############################################################
 # END OF FILE                                                 # 
