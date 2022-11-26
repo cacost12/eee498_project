@@ -67,6 +67,55 @@ def read_mid( midi_filename ):
 	return midi_notes 
 
 
+###############################################################
+#                                                             #
+# PROCEDURE:                                                  #
+#       export_midi                                           #
+#                                                             #
+# DESCRIPTION:                                                #
+#       Export a series of notes to a midi file               #
+#                                                             #
+###############################################################
+def export_midi( notes_list, output_filename ):
+	
+	# Local variables
+	offset       = 0
+	output_notes = []
+	output_file  = 'output/' + output_filename + ".mid" 
+
+	# Create note and chord objects 
+	for item in notes_list:
+		
+		# Chord
+		if ( '.' in item ) or item.isdigit():
+			notes_in_chord   = item.split( '.' ) 
+			midi_chord_notes = []
+			# Convert each note in the chord to a note object
+			for chord_note in notes_in_chord:
+				chord_note_int = int( chord_note )
+				new_note       = music.note.Note( chord_note_int )
+				new_note.storedInstrument = music.instrument.Piano()
+				midi_chord_notes.append( new_note )
+
+			# Construct the chord from the notes
+			new_chord = chord.Chord( midi_chord_notes )
+			new_chord.offset = offset
+			output_notes.append( new_chord )
+
+		# Note
+		else:
+			new_note        = music.note.Note( item )
+			new_note.offset = offset
+			new_note.storedInstrument = music.instrument.Piano()
+			output_notes.append( new_note )
+
+		# Increment offset
+		offset += 1
+
+	# Output Data to file
+	midi_fstream = stream.Stream( output_notes )		
+	midi_fstream.write( "midi", fp= output_file )
+
 
 ###############################################################
 # END OF FILE                                                 # 

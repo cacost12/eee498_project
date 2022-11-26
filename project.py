@@ -14,6 +14,7 @@
 ###############################################################
 import music21 as music
 import numpy   as np
+import random
 from   matplotlib  import pyplot as plt
 from   collections import Counter
 from   sklearn.model_selection import train_test_split
@@ -53,6 +54,8 @@ note_freq_threshold  = 10  # only use notes occuring more than 10 times
 num_timesteps        = 32  # Number of timesteps per song
 test_train_split_per = 0.3 # Percentage of test/train data
 random_seed          = 23
+batch_size           = 128
+epochs               = 50
 
 
 ###############################################################
@@ -154,8 +157,59 @@ X_train, X_test, Y_train, y_test = train_test_split( X_seq,
 # Machine Learning Model LTSM                                 #
 ###############################################################
 
+# Initialize the model 
+K.clear_session()
 ML_model = Sequential()
-	
+model.add( LTSM( 128, return_sequences = True ) )
+model.add(LSTM(128))
+model.add(Dense(256))
+model.add(Activation('relu'))
+model.add(Dense(n_vocab))
+model.add(Activation('softmax'))
+model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+
+# Best model callback
+model_callback = ModelCheckpoint( 'best_model.h5',
+                                  monitor = 'val_loss',
+                                  mode = 'min',
+                                  save_best_only = True,
+                                  verbose = 1 )
+
+# Train the model	
+training_history = model.fit( np.array( X_train ), 
+                              np.array( y_train ), 
+                              batch_size = batch_size, 
+                              epochs = epochs,
+                              validation_dat = ( np.array( X_test, 
+                                                           y_test ) ),
+                              verbose = 1, 
+                              callbacks = [model_callback] )
+
+# Import the best model
+model = load_model('best_model.h5')
+
+
+###############################################################
+# Compose new music                                           #
+###############################################################
+
+# Randomize the test data
+rand_indices = np.random.randint( 0, len( X_test ) - 1)
+random_music = X_test[rand_indices]
+
+# Make predictions based on the randomized notes
+yp = []
+for i in range( 10 ):
+	random_music = random_music.reshape( 1, num_timesteps )
+	probabilities = model.predict( random_music )[0]
+	y_pred = np.argmax( probabilities, axis = 0 )
+	yp.append( y_pred )
+	random_music = np.insert( random_music[0], len( random_music[0]), y_pred )
+	random_music = random_music[1:]
+
+# Convert the integers back to notes
+X_int_note = dict( (num, midi_note) for num, midi_note in enumerate( note_int_X ) ) 
+midi_note_preds = [ X_int_note[num] for num in yp ]
 
 ###############################################################
 # END OF FILE                                                 # 
