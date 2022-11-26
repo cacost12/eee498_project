@@ -163,29 +163,28 @@ K.clear_session()
 ML_model = Sequential()
 
 #embedding layer
-ML_model.add(Embedding(len(Note_int_X), 100, input_length=32,trainable=True)) 
+ML_model.add(Embedding(len(note_int_X), 100, input_length=32,trainable=True)) 
 
-model.add(Conv1D(64,3, padding='causal',activation='relu'))
-model.add(Dropout(0.2))
-model.add(MaxPool1D(2))
+ML_model.add(Conv1D(64,3, padding='causal',activation='relu'))
+ML_model.add(Dropout(0.2))
+ML_model.add(MaxPool1D(2))
     
-model.add(Conv1D(128,3,activation='relu',dilation_rate=2,padding='causal'))
-model.add(Dropout(0.2))
-model.add(MaxPool1D(2))
+ML_model.add(Conv1D(128,3,activation='relu',dilation_rate=2,padding='causal'))
+ML_model.add(Dropout(0.2))
+ML_model.add(MaxPool1D(2))
 
-model.add(Conv1D(256,3,activation='relu',dilation_rate=4,padding='causal'))
-model.add(Dropout(0.2))
-model.add(MaxPool1D(2))
+ML_model.add(Conv1D(256,3,activation='relu',dilation_rate=4,padding='causal'))
+ML_model.add(Dropout(0.2))
+ML_model.add(MaxPool1D(2))
           
-#model.add(Conv1D(256,5,activation='relu'))    
-model.add(GlobalMaxPool1D())
+ML_model.add(GlobalMaxPool1D())
     
-model.add(Dense(256, activation='relu'))
-model.add(Dense(len(note_int_y), activation='softmax'))
+ML_model.add(Dense(256, activation='relu'))
+ML_model.add(Dense(len(note_int_y), activation='softmax'))
     
-model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+ML_model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
 
-model.summary()
+ML_model.summary()
 
 # Best model callback
 model_callback = ModelCheckpoint( 'best_model.h5',

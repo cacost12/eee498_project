@@ -113,7 +113,7 @@ def export_midi( notes_list, output_filename ):
 		offset += 1
 
 	# Output Data to file
-	midi_fstream = stream.Stream( output_notes )		
+	midi_fstream = music.stream.Stream( output_notes )		
 	midi_fstream.write( "midi", fp= output_file )
 
 
