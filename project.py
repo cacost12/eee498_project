@@ -147,7 +147,7 @@ X_seq = np.array( X_seq )
 y_seq = np.array( [note_int_dic_y[midi_note] for midi_note in y] )
 
 # Split the test and train data
-X_train, X_test, Y_train, y_test = train_test_split( X_seq,
+X_train, X_test, y_train, y_test = train_test_split( X_seq,
 	                                                 y_seq,
                                                      test_size = test_train_split_per, 
                                                      random_state = random_seed )
@@ -160,13 +160,13 @@ X_train, X_test, Y_train, y_test = train_test_split( X_seq,
 # Initialize the model 
 K.clear_session()
 ML_model = Sequential()
-model.add( LTSM( 128, return_sequences = True ) )
-model.add(LSTM(128))
-model.add(Dense(256))
-model.add(Activation('relu'))
-model.add(Dense(n_vocab))
-model.add(Activation('softmax'))
-model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+ML_model.add( LSTM( 128, return_sequences = True ) )
+ML_model.add( LSTM(128) )
+ML_model.add( Dense(256))
+ML_model.add( Activation('relu') )
+ML_model.add( Dense(n_vocab) )
+ML_model.add(Activation('softmax'))
+ML_model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
 
 # Best model callback
 model_callback = ModelCheckpoint( 'best_model.h5',
@@ -176,7 +176,7 @@ model_callback = ModelCheckpoint( 'best_model.h5',
                                   verbose = 1 )
 
 # Train the model	
-training_history = model.fit( np.array( X_train ), 
+training_history = ML_model.fit( np.array( X_train ), 
                               np.array( y_train ), 
                               batch_size = batch_size, 
                               epochs = epochs,
@@ -212,7 +212,7 @@ X_int_note = dict( (num, midi_note) for num, midi_note in enumerate( note_int_X 
 midi_note_preds = [ X_int_note[num] for num in yp ]
 
 # Export to a midi file
-export_midi( midi_note_preds )
+midi_util.export_midi( midi_note_preds )
 
 ###############################################################
 # END OF FILE                                                 # 
