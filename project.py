@@ -18,9 +18,9 @@ import random
 from   matplotlib  import pyplot as plt
 from   collections import Counter
 from   sklearn.model_selection import train_test_split
-from keras.layers import *
-from keras.models import *
-from keras.callbacks import *
+from   keras.layers import *
+from   keras.models import *
+from   keras.callbacks import *
 import keras.backend as K
 
 
@@ -164,7 +164,7 @@ ML_model.add( LSTM( 128, return_sequences = True ) )
 ML_model.add( LSTM(128) )
 ML_model.add( Dense(256))
 ML_model.add( Activation('relu') )
-ML_model.add( Dense(n_vocab) )
+ML_model.add( Dense( len(note_int_y ) ) )
 ML_model.add(Activation('softmax'))
 ML_model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
 
