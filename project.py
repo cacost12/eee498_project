@@ -54,9 +54,10 @@ output_filename = "new_music"
 note_freq_threshold  = 10  # only use notes occuring more than 10 times
 num_timesteps        = 32  # Number of timesteps per song
 test_train_split_per = 0.3 # Percentage of test/train data
-random_seed          = 23
+random_seed          = 35 
 batch_size           = 128
 epochs               = 50
+song_length          = 10 # length of composed song
 
 
 ###############################################################
@@ -217,7 +218,7 @@ random_music = X_test[rand_indices]
 
 # Make predictions based on the randomized notes
 yp = []
-for i in range( 10 ):
+for i in range( song_length):
 	random_music = random_music.reshape( 1, num_timesteps )
 	probabilities = model.predict( random_music )[0]
 	y_pred = np.argmax( probabilities, axis = 0 )

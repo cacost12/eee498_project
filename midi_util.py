@@ -98,7 +98,7 @@ def export_midi( notes_list, output_filename ):
 				midi_chord_notes.append( new_note )
 
 			# Construct the chord from the notes
-			new_chord = chord.Chord( midi_chord_notes )
+			new_chord = music.chord.Chord( midi_chord_notes )
 			new_chord.offset = offset
 			output_notes.append( new_chord )
 
