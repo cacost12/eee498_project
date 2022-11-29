@@ -40,6 +40,7 @@ def read_mid( midi_filename ):
 	# Local variables
 	midi_notes     = []
 	notes_to_parse = None
+	print( "Loading File: " + midi_filename + "..." )
 	
 	# Parse the midi file
 	midi_file = music.converter.parse( midi_filename )

@@ -14,6 +14,7 @@
 ###############################################################
 import music21 as music
 import numpy   as np
+import os
 import random
 from   matplotlib  import pyplot as plt
 from   collections import Counter
@@ -28,36 +29,6 @@ import keras.backend as K
 # Project Modules                                             #
 ###############################################################
 import midi_util
-
-
-###############################################################
-# Global Variables                                            #
-###############################################################
-
-# Midi files and data 
-midi_path = 'mid/'
-midi_files = [ 
-			  midi_path + "greendayrhythm.mid",
-              midi_path + "greendayvocal.mid" , 
-              midi_path + "hotellead.mid"     , 
-              midi_path + "hotelrhythm.mid"   , 
-              midi_path + "queenchorus.mid"   , 
-              midi_path + "queenrhythm.mid"   , 
-              midi_path + "queenvocal.mid"    , 
-              midi_path + "vivalead.mid"      , 
-              midi_path + "vivarythm.mid"       
-             ]
-midi_notes_list = []
-output_filename = "new_music"
-
-# Model hyperparameters
-note_freq_threshold  = 10  # only use notes occuring more than 10 times
-num_timesteps        = 32  # Number of timesteps per song
-test_train_split_per = 0.3 # Percentage of test/train data
-random_seed          = 35 
-batch_size           = 128
-epochs               = 50
-song_length          = 10 # length of composed song
 
 
 ###############################################################
@@ -83,6 +54,45 @@ def flatten_list( input_list ):
 
 
 ###############################################################
+# Global Variables                                            #
+###############################################################
+
+## SET OUTPUT FILE NAME 
+output_filename = "new_music"
+
+# Midi files and data 
+midi_path = 'mid/'
+og_midi_files    = [ "mid/Original/"   + filename for filename in os.listdir( midi_path + "Original/"   ) ]
+coldplay_songs   = [ "mid/Coldplay/"   + filename for filename in os.listdir( midi_path + "Coldplay/"   ) ]
+greenday_songs   = [ "mid/GreenDay/"   + filename for filename in os.listdir( midi_path + "GreenDay/"   ) ]
+alanwalker_songs = [ "mid/AlanWalker/" + filename for filename in os.listdir( midi_path + "AlanWalker/" ) ]
+allsongs         = [ coldplay_songs, greenday_songs, alanwalker_songs ]
+allsongs         = flatten_list( allsongs )
+
+## SET SONG SELECTION FOR MODEL TRAINING 
+midi_files = allsongs 
+
+# List of notes imported from midi files
+midi_notes_list = []
+
+# Model hyperparameters
+note_freq_threshold  = 20 # only use notes occuring more than 10 times
+num_timesteps        = 32  # Number of timesteps per song
+test_train_split_per = 0.3 # Percentage of test/train data
+random_seed          = 35 
+batch_size           = 128
+epochs               = 100 
+song_length          = 10 # length of composed song
+
+# ML model architecture parameters
+conv_layer1_dim      = 2*num_timesteps
+conv_layer2_dim      = 4*num_timesteps
+conv_layer3_dim      = 8*num_timesteps
+
+
+
+
+###############################################################
 # Load Dataset                                                #
 ###############################################################
 
@@ -91,18 +101,16 @@ print( "Importing midi data ..." )
 for midi_file in midi_files:
 	song_midi_notes_list = midi_util.read_mid( midi_file )
 	if ( len( song_midi_notes_list ) ):
-		midi_notes_list.append( midi_util.read_mid( midi_file ) )	
+		midi_notes_list.append( song_midi_notes_list )	
 
 # Convert to numpy array
 midi_notes_list1D = flatten_list( midi_notes_list )
 midi_notes_array  = np.array( midi_notes_list1D )
 print( "Midi data imported sucessfully" )
 
-# Visualize the dataset  
+# Note Frequency Statistics 
 note_frequencies = dict( Counter( midi_notes_list1D ) )
 note_freq_nums = [ note_count for _,note_count in note_frequencies.items() ]
-plt.hist( note_freq_nums )
-plt.show()
 
 # Determine the most frequent notes 
 freq_note_list = []
@@ -119,6 +127,15 @@ for song in midi_notes_list:
 			note_buffer.append( midi_note ) 
 	filtered_notes_list.append( note_buffer )
 filtered_notes_list1D = flatten_list( filtered_notes_list )
+
+# Print Dataset statistics
+print("Length of Dataset:           ", len( midi_notes_list1D        ) )
+print( "Unique Notes:               ", len( set( midi_notes_list1D ) ) )
+print( "Length of Filtered Dataset: ", len( filtered_notes_list1D    ) )
+
+# Visualize the dataset
+plt.hist( note_freq_nums )
+plt.show()
 
 # Prepare the input and output sequences
 X = []
@@ -164,17 +181,17 @@ K.clear_session()
 ML_model = Sequential()
 
 #embedding layer
-ML_model.add(Embedding(len(note_int_X), 100, input_length=32,trainable=True)) 
+ML_model.add(Embedding(len(note_int_X), 100, input_length = num_timesteps,trainable=True)) 
 
-ML_model.add(Conv1D(64,3, padding='causal',activation='relu'))
+ML_model.add(Conv1D(conv_layer1_dim,3, padding='causal',activation='relu'))
 ML_model.add(Dropout(0.2))
 ML_model.add(MaxPool1D(2))
     
-ML_model.add(Conv1D(128,3,activation='relu',dilation_rate=2,padding='causal'))
+ML_model.add(Conv1D(conv_layer2_dim,3,activation='relu',dilation_rate=2,padding='causal'))
 ML_model.add(Dropout(0.2))
 ML_model.add(MaxPool1D(2))
 
-ML_model.add(Conv1D(256,3,activation='relu',dilation_rate=4,padding='causal'))
+ML_model.add(Conv1D(conv_layer3_dim,3,activation='relu',dilation_rate=4,padding='causal'))
 ML_model.add(Dropout(0.2))
 ML_model.add(MaxPool1D(2))
           
@@ -205,7 +222,7 @@ training_history = ML_model.fit( np.array( X_train ),
                               callbacks = [model_callback] )
 
 # Import the best model
-model = load_model('best_model.h5')
+best_model = load_model('best_model.h5')
 
 
 ###############################################################
@@ -218,9 +235,9 @@ random_music = X_test[rand_indices]
 
 # Make predictions based on the randomized notes
 yp = []
-for i in range( song_length):
+for i in range( song_length ):
 	random_music = random_music.reshape( 1, num_timesteps )
-	probabilities = model.predict( random_music )[0]
+	probabilities = best_model.predict( random_music )[0]
 	y_pred = np.argmax( probabilities, axis = 0 )
 	yp.append( y_pred )
 	random_music = np.insert( random_music[0], len( random_music[0]), y_pred )
