@@ -61,7 +61,7 @@ def flatten_list( input_list ):
 output_filename = "new_music"
 
 # Midi files and data 
-midi_path = 'mid/'
+midi_path        = 'mid/'
 og_midi_files    = [ "mid/Original/"   + filename for filename in os.listdir( midi_path + "Original/"   ) ]
 coldplay_songs   = [ "mid/Coldplay/"   + filename for filename in os.listdir( midi_path + "Coldplay/"   ) ]
 greenday_songs   = [ "mid/GreenDay/"   + filename for filename in os.listdir( midi_path + "GreenDay/"   ) ]
@@ -70,13 +70,13 @@ allsongs         = [ coldplay_songs, greenday_songs, alanwalker_songs ]
 allsongs         = flatten_list( allsongs )
 
 ## SET SONG SELECTION FOR MODEL TRAINING 
-midi_files = allsongs 
+midi_files       = allsongs 
 
 # List of notes imported from midi files
 midi_notes_list = []
 
 # Model hyperparameters
-note_freq_threshold  = 20 # only use notes occuring more than 10 times
+note_freq_threshold  = 50 # only use notes occuring more than 10 times
 num_timesteps        = 32  # Number of timesteps per song
 test_train_split_per = 0.3 # Percentage of test/train data
 random_seed          = 35 
@@ -88,8 +88,6 @@ song_length          = 10 # length of composed song
 conv_layer1_dim      = 2*num_timesteps
 conv_layer2_dim      = 4*num_timesteps
 conv_layer3_dim      = 8*num_timesteps
-
-
 
 
 ###############################################################
@@ -134,7 +132,10 @@ print( "Unique Notes:               ", len( set( midi_notes_list1D ) ) )
 print( "Length of Filtered Dataset: ", len( filtered_notes_list1D    ) )
 
 # Visualize the dataset
-plt.hist( note_freq_nums )
+plt.hist ( note_freq_nums                           )
+plt.title( "Data Note/Chord Frequency Distribution" )
+plt.ylabel( "Note/Chord Occurance Distribution" )
+plt.xlabel( "Note Index" )
 plt.show()
 
 # Prepare the input and output sequences
@@ -197,7 +198,7 @@ ML_model.add(MaxPool1D(2))
           
 ML_model.add(GlobalMaxPool1D())
     
-ML_model.add(Dense(256, activation='relu'))
+ML_model.add(Dense(conv_layer3_dim, activation='relu'))
 ML_model.add(Dense(len(note_int_y), activation='softmax'))
     
 ML_model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
@@ -214,12 +215,14 @@ model_callback = ModelCheckpoint( 'best_model.h5',
 # Train the model	
 training_history = ML_model.fit( np.array( X_train ), 
                                  np.array( y_train ), 
-                              batch_size = batch_size, 
-                              epochs = epochs,
-                              validation_data = ( np.array( X_test ), 
-                                                 np.array( y_test ) ),
-                              verbose = 1, 
-                              callbacks = [model_callback] )
+                                 batch_size = batch_size, 
+                                 epochs = epochs,
+                                 validation_data = ( np.array( X_test ), 
+                                                     np.array( y_test ) ),
+                                 verbose = 1, 
+                                 callbacks = [model_callback] )
+print( "Training History" )                                
+print( training_history )                                
 
 # Import the best model
 best_model = load_model('best_model.h5')
