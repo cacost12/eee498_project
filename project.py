@@ -70,18 +70,18 @@ allsongs         = [ coldplay_songs, greenday_songs, alanwalker_songs ]
 allsongs         = flatten_list( allsongs )
 
 ## SET SONG SELECTION FOR MODEL TRAINING 
-midi_files       = allsongs 
+midi_files       = coldplay_songs 
 
 # List of notes imported from midi files
 midi_notes_list = []
 
 # Model hyperparameters
-note_freq_threshold  = 50 # only use notes occuring more than 10 times
+note_freq_threshold  = 70 # only use notes occuring more than 10 times
 num_timesteps        = 32  # Number of timesteps per song
 test_train_split_per = 0.3 # Percentage of test/train data
 random_seed          = 35 
 batch_size           = 128
-epochs               = 100 
+epochs               = 50 
 song_length          = 10 # length of composed song
 
 # ML model architecture parameters
@@ -89,6 +89,57 @@ conv_layer1_dim      = 2*num_timesteps
 conv_layer2_dim      = 4*num_timesteps
 conv_layer3_dim      = 8*num_timesteps
 
+
+###############################################################
+#                                                             #
+# OBJECT:                                                     #
+#       ModelError                                            #
+#                                                             #
+# DESCRIPTION:                                                #
+#       Contains functions for maintaining model errors from  #
+#       the training process                                  #
+#                                                             #
+###############################################################
+class ModelError( Callback ):
+
+    def on_train_begin(self, logs={}):
+        self.metrics = {}
+        for metric in logs:
+            self.metrics[metric] = []
+            
+
+    def on_epoch_end(self, epoch, logs={}):
+        # Storing metrics
+        for metric in logs:
+            if metric in self.metrics:
+                self.metrics[metric].append(logs.get(metric))
+            else:
+                self.metrics[metric] = [logs.get(metric)]
+        self.logs = logs
+
+    def on_train_end( self, logs={} ):
+
+        # Plotting
+        metrics = [x for x in logs if 'val' not in x]
+        
+        f, axs = plt.subplots(1, len(metrics) )
+
+        for i, metric in enumerate(metrics):
+            axs.plot(range(1, epochs + 1), 
+                        self.metrics[metric], 
+                        label=metric)
+            if logs['val_' + metric]:
+                axs.plot(range(1, epochs + 1), 
+                            self.metrics['val_' + metric], 
+                            label='val_' + metric)
+                
+            axs.legend()
+            axs.grid()
+
+        plt.title( "Loss Error versus Training Iteration" )
+        plt.xlabel( "Training Iteration (epoch)"          )
+        plt.ylabel( "Loss Function"                       )
+        plt.show( )
 
 ###############################################################
 # Load Dataset                                                #
@@ -136,6 +187,7 @@ plt.hist ( note_freq_nums                           )
 plt.title( "Data Note/Chord Frequency Distribution" )
 plt.ylabel( "Note/Chord Occurance Distribution" )
 plt.xlabel( "Note Index" )
+plt.grid()
 plt.show()
 
 # Prepare the input and output sequences
@@ -220,9 +272,8 @@ training_history = ML_model.fit( np.array( X_train ),
                                  validation_data = ( np.array( X_test ), 
                                                      np.array( y_test ) ),
                                  verbose = 1, 
-                                 callbacks = [model_callback] )
+                                 callbacks = [model_callback, ModelError()] )
 print( "Training History" )                                
-print( training_history )                                
 
 # Import the best model
 best_model = load_model('best_model.h5')
